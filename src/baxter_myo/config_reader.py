@@ -44,6 +44,7 @@ class ConfigReader(object):
             self.arm_mode = self._config.get("GENERAL",
                                              "arm_mode")
         except ConfigParser.NoOptionError, err:
+            print str(self._config_path)
             print str(err)
             return False
         return True
