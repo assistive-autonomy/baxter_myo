@@ -21,7 +21,7 @@ def send_image():
         """
         rp = rospkg.RosPack()
         path = rp.get_path('baxter_myo') \
-               + '/share/' + 'good_face.jpg'
+               + '/share/' + 'pink_face.jpg'
         img = cv2.imread(path)
         msg = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
         pub = rospy.Publisher('/robot/xdisplay', Image, latch=True, queue_size=10)
