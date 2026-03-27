@@ -26,12 +26,13 @@ class ArmController(object):
         self._left_limb = Limb('left')
         self._right_gripper = Gripper('right', CHECK_VERSION)
         self._right_gripper.calibrate()
-        self._left_gripper = Gripper('left', CHECK_VERSION)
-        self._left_gripper.calibrate()
+        if (self._mode == "two_arms"):
+            self._left_gripper = Gripper('left', CHECK_VERSION)
+            self._left_gripper.calibrate()
         self._is_right_fist_closed = False
         self._is_left_fist_closed = False
         
-        self._right_torso_navigator = Navigator('right_torso')
+        # self._right_torso_navigator = Navigator('right_torso')
         self._right_limb_navigator = Navigator('right')
 
         rospy.loginfo("Moving to neutral position")
@@ -129,14 +130,14 @@ class ArmController(object):
                 rospy.logwarn("Generated position is invalid")
         else:
             rospy.logwarn("Navigator button detected!")
-            self._right_limb_navigator.outer_led(enable=True)
-            self._right_limb_navigator.inner_led(enable=True)
+            self._right_limb_navigator.outer_led = True
+            self._right_limb_navigator.inner_led = True
             rospy.loginfo("Moving to neutral position")
             self.move_to_neutral()
             rospy.loginfo("Recalibrating PoseGenerator")
             self._pg.calibrate()
-            self._right_limb_navigator.outer_led(enable=False)
-            self._right_limb_navigator.inner_led(enable=False)
+            self._right_limb_navigator.outer_led =False
+            self._right_limb_navigator.inner_led =False
 
     def two_arms_step(self):
         self._command_right_gripper()
