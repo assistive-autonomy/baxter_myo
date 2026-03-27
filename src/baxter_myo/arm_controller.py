@@ -44,7 +44,11 @@ class ArmController(object):
         self._sub_left_gesture = rospy.Subscriber("/top_myo/gesture", UInt8,
                                                   self._left_gesture_callback)
         self._last_data = None
+        self._right_limb_navigator.outer_led = True
+        self._right_limb_navigator.inner_led = True
         self._pg.calibrate()
+        self._right_limb_navigator.outer_led = False
+        self._right_limb_navigator.inner_led = False
 
     def move_to_neutral(self):
         if self._mode == "one_arm":
@@ -129,7 +133,7 @@ class ArmController(object):
             else:
                 rospy.logwarn("Generated position is invalid")
         else:
-            rospy.logwarn("Navigator button detected!")
+            rospy.logwarn("Right Limb Navigator button detected!")
             self._right_limb_navigator.outer_led = True
             self._right_limb_navigator.inner_led = True
             rospy.loginfo("Moving to neutral position")

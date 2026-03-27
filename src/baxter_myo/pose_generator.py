@@ -6,7 +6,7 @@ import rospy
 import tf
 from std_msgs.msg import Header
 from geometry_msgs.msg import Vector3
-from baxter_interface import Limb
+from baxter_interface import Limb, Navigator
 
 
 class PoseGenerator(object):
@@ -17,6 +17,7 @@ class PoseGenerator(object):
         self._step = step
         self._right_limb = Limb('right')
         self._left_limb = Limb('left')
+        self._right_limb_navigator = Navigator('right')
         self._subscribe()
 
     def _subscribe(self):
@@ -61,11 +62,13 @@ class PoseGenerator(object):
         """
         Calibrate position of the robot arm wrt the myo data
         """
-        raw_input("Press enter when user is at the right pose")
-        self._calib_data_0 = deepcopy(self._last_data_0)
-        self._calib_data_1 = deepcopy(self._last_data_1)
-        self._right_calib_pose = self._right_limb.joint_angles()
-        self._left_calib_pose = self._left_limb.joint_angles()
+        while not rospy.is_shutdown():
+            if self._right_limb_navigator.button0:
+                rospy.logwarn("Right Limb Navigator button detected!")
+                self._calib_data_0 = deepcopy(self._last_data_0)
+                self._calib_data_1 = deepcopy(self._last_data_1)
+                self._right_calib_pose = self._right_limb.joint_angles()
+                self._left_calib_pose = self._left_limb.joint_angles()
 
     def _is_vector_valid(self, data):
         """
