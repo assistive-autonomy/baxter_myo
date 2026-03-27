@@ -2,7 +2,7 @@ import sys, os
 
 import rospy
 from std_msgs.msg import String, UInt8
-from baxter_interface import Limb, Gripper, CHECK_VERSION
+from baxter_interface import Limb, Gripper, Navigator, CHECK_VERSION
 
 from baxter_myo.pose_generator import PoseGenerator
 
@@ -30,6 +30,9 @@ class ArmController(object):
         self._left_gripper.calibrate()
         self._is_right_fist_closed = False
         self._is_left_fist_closed = False
+        
+        self._right_torso_navigator = Navigator('right_torso')
+        self._right_limb_navigator = Navigator('right')
 
         rospy.loginfo("Moving to neutral position")
         self.move_to_neutral()
@@ -112,18 +115,28 @@ class ArmController(object):
             raise ValueError("Mode %s is invalid!" % self.mode)
 
     def one_arm_step(self):
-        self._command_right_gripper()
+        if not self._right_limb_navigator.button0:
+            self._command_right_gripper()
 
-        pos = self._pg.generate_pose()
+            pos = self._pg.generate_pose()
 
-        if pos is not None:
-            if not self.is_right_pushing():
-                self._right_limb.set_joint_positions(pos)
+            if pos is not None:
+                if not self.is_right_pushing():
+                    self._right_limb.set_joint_positions(pos)
+                else:
+                    rospy.logwarn("Arm is being pushed!")
             else:
-                rospy.logwarn("Arm is being pushed!")
+                rospy.logwarn("Generated position is invalid")
         else:
-            rospy.logwarn("Generated position is invalid")
-
+            rospy.logwarn("Navigator button detected!")
+            self._right_limb_navigator.outer_led(enable=True)
+            self._right_limb_navigator.inner_led(enable=True)
+            rospy.loginfo("Moving to neutral position")
+            self.move_to_neutral()
+            rospy.loginfo("Recalibrating PoseGenerator")
+            self._pg.calibrate()
+            self._right_limb_navigator.outer_led(enable=False)
+            self._right_limb_navigator.inner_led(enable=False)
 
     def two_arms_step(self):
         self._command_right_gripper()
