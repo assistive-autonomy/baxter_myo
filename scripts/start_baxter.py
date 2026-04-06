@@ -40,7 +40,7 @@ def main():
 
     s = ArmController((c.right_angles, c.left_angles), c.push_thresh, c.mode, c.arm_mode)
     #s = ArmController((right, left), push_thresh, mode, arm_mode)
-    send_image()
+    # send_image()
     while not rospy.is_shutdown():
         s.step()
 
