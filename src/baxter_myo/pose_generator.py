@@ -65,15 +65,17 @@ class PoseGenerator(object):
         Calibrate position of the robot arm wrt the myo data
         """
         self.baxter_input.blink()
+        self.baxter_input.leds_on('pause')
         while not rospy.is_shutdown():
             self.baxter_input.update()
-            if (self.baxter_input.torso_pressed):
-                rospy.logwarn("Right Navigator button detected!")
+            if (self.baxter_input.torso_top_pressed or self.baxter_input.limb_top_pressed):
+                rospy.logwarn("Navigator Top button detected!")
                 self._calib_data_0 = deepcopy(self._last_data_0)
                 self._calib_data_1 = deepcopy(self._last_data_1)
                 self._right_calib_pose = self._right_limb.joint_angles()
                 self._left_calib_pose = self._left_limb.joint_angles()
                 break
+        self.baxter_input.leds_off()
 
     def _is_vector_valid(self, data):
         """

@@ -43,6 +43,6 @@ def main():
     # send_image()
     while not rospy.is_shutdown():
         s.step()
-
+    s.baxter_input.leds_off()
 if __name__ == "__main__":
     main()

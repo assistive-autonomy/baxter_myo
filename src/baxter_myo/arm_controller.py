@@ -13,52 +13,72 @@ class InputHandle(object):
         self._right_shoulder_button = DigitalIO('right_shoulder_button')
 
         self.hold_threshold = rospy.Duration.from_sec(hold_t)
-        
-        # State variables
-        self._right_torso_state = self._right_torso_navigator.button0
-        self._righ_limb_state = self._right_limb_navigator.button0
-        self._right_torso_last_state = self._right_torso_navigator.button0
-        self._righ_limb_last_state = self._right_limb_navigator.button0
-
-        self.press_time = 0.0
 
         # Internal State tracking
         self._states = {
-            'torso': {'curr': False, 'last': False, 'start': rospy.Duration(0)},
-            'limb':  {'curr': False, 'last': False, 'start': rospy.Duration(0)},
+            'torso_top': {'curr': False, 'last': False, 'start': rospy.Duration(0)},
+            'torso_bottom': {'curr': False, 'last': False, 'start': rospy.Duration(0)},            
+            'limb_top':  {'curr': False, 'last': False, 'start': rospy.Duration(0)},
+            'limb_bottom': {'curr': False, 'last': False, 'start': rospy.Duration(0)},
             'shoulder': {'curr': 1,     'last': 1,     'start': rospy.Duration(0)}
         }
         
         # Event storage
         self._events = {
-            'torso': {'pressed': False, 'holding': False, 'released': False},
-            'limb':  {'pressed': False, 'holding': False, 'released': False},
+            'torso_top': {'pressed': False, 'holding': False, 'released': False},
+            'torso_bottom': {'pressed': False, 'holding': False, 'released': False},
+            'limb_top':  {'pressed': False, 'holding': False, 'released': False},
+            'limb_bottom':  {'pressed': False, 'holding': False, 'released': False},            
             'shoulder': {'pressed': False, 'holding': False, 'released': False}
         }
 
     @property
-    def torso_pressed(self):
-        return self._events['torso']['pressed']
+    def torso_top_pressed(self):
+        return self._events['torso_top']['pressed']
 
     @property
-    def torso_holding(self):
-        return self._events['torso']['holding']
+    def torso_top_holding(self):
+        return self._events['torso_top']['holding']
 
     @property
-    def torso_released(self):
-        return self._events['torso']['released']
+    def torso_top_released(self):
+        return self._events['torso_top']['released']
 
     @property
-    def limb_pressed(self):
-        return self._events['limb']['pressed']
+    def torso_bottom_pressed(self):
+        return self._events['torso_bottom']['pressed']
 
     @property
-    def limb_holding(self):
-        return self._events['limb']['holding']
+    def torso_bottom_holding(self):
+        return self._events['torso_bottom']['holding']
 
     @property
-    def limb_released(self):
-        return self._events['limb']['released']
+    def torso_bottom_released(self):
+        return self._events['torso_bottom']['released']
+
+    @property
+    def limb_top_pressed(self):
+        return self._events['limb_top']['pressed']
+
+    @property
+    def limb_top_holding(self):
+        return self._events['limb_top']['holding']
+
+    @property
+    def limb_top_released(self):
+        return self._events['limb_top']['released']
+
+    @property
+    def limb_bottom_pressed(self):
+        return self._events['limb_bottom']['pressed']
+
+    @property
+    def limb_bottom_holding(self):
+        return self._events['limb_bottom']['holding']
+
+    @property
+    def limb_bottom_released(self):
+        return self._events['limb_bottom']['released']
     
     @property
     def shoulder_pressed(self):
@@ -75,13 +95,16 @@ class InputHandle(object):
     def update(self):
         now = rospy.Time.now()
 
-        self._states['torso']['curr'] = self._right_torso_navigator.button0
-        self._states['limb']['curr']  = self._right_limb_navigator.button0
+        self._states['torso_top']['curr'] = self._right_torso_navigator.button1
+        self._states['torso_bottom']['curr'] = self._right_torso_navigator.button2
+        self._states['limb_top']['curr']  = self._right_limb_navigator.button1
+        self._states['limb_bottom']['curr']  = self._right_limb_navigator.button2
         self._states['shoulder']['curr'] = self._right_shoulder_button.state
 
-      
-        self._process('torso', True, now)
-        self._process('limb',  True, now)
+        self._process('torso_top', True, now)
+        self._process('torso_bottom', True, now)
+        self._process('limb_top',  True, now)
+        self._process('limb_bottom',  True, now)        
         self._process('shoulder', 0,    now)
 
         for key in self._states:
@@ -113,11 +136,24 @@ class InputHandle(object):
             self.leds_off()
             self.leds_on()
 
-    def leds_on(self): 
-        self._right_limb_navigator.outer_led = True
-        self._right_limb_navigator.inner_led = True
-        self._right_torso_navigator.outer_led = True
-        self._right_torso_navigator.inner_led = True
+    def leds_on(self, state=None):
+        if state is None:
+            self._right_limb_navigator.outer_led = True
+            self._right_limb_navigator.inner_led = True
+            self._right_torso_navigator.outer_led = True
+            self._right_torso_navigator.inner_led = True
+        elif state == 'pause':
+            self._right_limb_navigator.outer_led = False
+            self._right_limb_navigator.inner_led = True
+            self._right_torso_navigator.outer_led = False
+            self._right_torso_navigator.inner_led = True
+        elif state == 'auto':
+            self._right_limb_navigator.outer_led = True
+            self._right_limb_navigator.inner_led = False
+            self._right_torso_navigator.outer_led = True
+            self._right_torso_navigator.inner_led = False
+        else:
+            rospy.logwarn("Invalid LED state. Please use 'pause' or 'auto'")
         rospy.sleep(0.1)
         
     def leds_off(self):   
@@ -125,7 +161,7 @@ class InputHandle(object):
         self._right_limb_navigator.inner_led = False
         self._right_torso_navigator.outer_led = False
         self._right_torso_navigator.inner_led = False
-        rospy.sleep(0.1)        
+        rospy.sleep(0.1)
 
         
 
@@ -157,11 +193,9 @@ class ArmController(object):
         
 
         self.baxter_input = InputHandle()
-        # self._right_torso_navigator = Navigator('torso_right')
-        # self._right_limb_navigator = Navigator('right')
-        # self._right_shoulder_button = DigitalIO('right_shoulder_button')
-        # self.pause = False
+        self.is_paused = False
 
+        self.baxter_input.leds_on('auto')
         rospy.loginfo("Moving to neutral position")
         self.move_to_neutral()
         rospy.loginfo("Initialising PoseGenerator")
@@ -172,13 +206,13 @@ class ArmController(object):
                                                   self._left_gesture_callback)
         self._last_data = None
         self.baxter_input.update()
-        self.baxter_input.leds_on()
+        self.baxter_input.leds_on('pause')
         self._pg.calibrate()
-        self.baxter_input.leds_off()
+        self.baxter_input.leds_on()
 
     def move_to_neutral(self):
         if self._mode == "one_arm":
-            self._right_limb.move_to_joint_positions(self._right_neutral_pos)
+            self._right_limb.move_to_joint_positions(self._right_neutral_pos, threshold=0.1)
         elif self._mode == "two_arms":
             self._right_limb.move_to_joint_positions(self._right_neutral_pos)
             self._left_limb.move_to_joint_positions(self._left_neutral_pos)
@@ -245,31 +279,37 @@ class ArmController(object):
             return self.two_arms_step()
         else:
             raise ValueError("Mode %s is invalid!" % self.mode)
+        if rospy.is_shutdown():
+            self.baxter_input.leds_off()
 
     def one_arm_step(self):
         
         ## torso and arm to recalibrate
-        if (self.baxter_input.limb_pressed):
-            rospy.logwarn("Right Navigator button detected!")
-            self.baxter_input.leds_on()
+        if (self.baxter_input.torso_top_pressed or self.baxter_input.limb_top_pressed):
+            rospy.logwarn("Navigator Top button detected!")
+            self.baxter_input.leds_on('auto')
             rospy.loginfo("Moving to neutral position")
             self.move_to_neutral()
             rospy.loginfo("Recalibrating PoseGenerator")
-            self.baxter_input.leds_on()
+            self.baxter_input.leds_on('pause')
             self._pg.calibrate()
-            self.baxter_input.leds_off()
-            return
-        ## pause with right shoulder button held
-        
-        if self.baxter_input.shoulder_holding:
-            rospy.logwarn("Shoulder button detected! PAUSING")
-            rospy.sleep(rospy.Duration(1))
             self.baxter_input.leds_on()
-        else:
-            rospy.logwarn("Shoulder button not detected! RESUMING")
-            rospy.sleep
-            self.baxter_input.leds_off()
+            self.is_paused = False
+            return
 
+        ## pause/unpause with navigator bottom buttons
+        if (self.baxter_input.torso_bottom_pressed or self.baxter_input.limb_bottom_pressed):
+            if not self.is_paused:
+                rospy.logwarn("Navigator Top button detected! PAUSING")
+                self.baxter_input.leds_on('pause')
+                self.is_paused = True
+            else:
+                rospy.logwarn("Navigator Top button detected! RESUMING")
+                self.baxter_input.leds_on()
+                self.is_paused = False
+        elif self.is_paused:
+            rospy.logwarn_throttle(5, "Demo currently PAUSED!")
+        else:
             self._command_right_gripper()
             pos = self._pg.generate_pose()
 
